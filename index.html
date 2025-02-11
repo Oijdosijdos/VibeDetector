@@ -1,16 +1,42 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="et">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Emotion Detector</title>
+    <title>AI Emotsioonide Tuvastaja</title>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/face-landmarks-detection"></script>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            overflow: hidden;
+        }
+        video, canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        #emotionText {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            font-size: 30px;
+            font-weight: bold;
+            color: white;
+            background-color: rgba(0, 0, 0, 0.5);
+            padding: 10px;
+        }
+    </style>
 </head>
 <body>
-    <video id="video" autoplay playsinline style="display:none;"></video>
+    <video id="video" autoplay playsinline></video>
     <canvas id="canvas"></canvas>
-    <p id="emotionText">Detecting...</p>
+    <p id="emotionText">Tuvastamine...</p>
 
     <script>
         async function setupCamera() {
@@ -31,10 +57,23 @@
             const canvas = document.getElementById('canvas');
             const ctx = canvas.getContext('2d');
 
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+
             const model = await faceLandmarksDetection.load(
                 faceLandmarksDetection.SupportedPackages.mediapipeFacemesh,
                 { maxFaces: 1 }
             );
+
+            const emotions = {
+                Happy: { color: 'yellow', text: 'Happy' },
+                Angry: { color: 'red', text: 'Angry' },
+                Sad: { color: 'blue', text: 'Sad' },
+                Surprised: { color: 'orange', text: 'Surprised' },
+                Disgusted: { color: 'green', text: 'Disgusted' },
+                Fearful: { color: 'purple', text: 'Fearful' },
+                Neutral: { color: 'gray', text: 'Neutral' },
+            };
 
             setInterval(async () => {
                 const predictions = await model.estimateFaces({ input: video });
@@ -43,9 +82,11 @@
                 ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
                 if (predictions.length > 0) {
-                    document.getElementById("emotionText").innerText = "Face Detected";
+                    const emotion = emotions.Neutral; // Placeholder for now, will be updated based on model
+                    document.getElementById("emotionText").innerText = emotion.text;
+                    document.getElementById("emotionText").style.color = emotion.color;
                 } else {
-                    document.getElementById("emotionText").innerText = "No Face Detected";
+                    document.getElementById("emotionText").innerText = "Nägu ei ole tuvastatud";
                 }
             }, 500);
         }
