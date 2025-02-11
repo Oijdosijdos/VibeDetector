@@ -4,38 +4,46 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Emotion Detector</title>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_detection"></script>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/facemesh"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/face-landmarks-detection"></script>
 </head>
 <body>
-    <video id="video" autoplay playsinline></video>
+    <video id="video" autoplay playsinline style="display:none;"></video>
     <canvas id="canvas"></canvas>
     <p id="emotionText">Detecting...</p>
 
     <script>
         async function setupCamera() {
             const video = document.getElementById('video');
-            const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+            const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
             video.srcObject = stream;
-            await new Promise((resolve) => video.onloadedmetadata = resolve);
+
+            return new Promise((resolve) => {
+                video.onloadedmetadata = () => {
+                    video.play();
+                    resolve();
+                };
+            });
         }
 
         async function detectEmotion() {
             const video = document.getElementById('video');
             const canvas = document.getElementById('canvas');
             const ctx = canvas.getContext('2d');
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
 
-            const model = await facemesh.load();
+            const model = await faceLandmarksDetection.load(
+                faceLandmarksDetection.SupportedPackages.mediapipeFacemesh,
+                { maxFaces: 1 }
+            );
+
             setInterval(async () => {
-                const predictions = await model.estimateFaces(video);
+                const predictions = await model.estimateFaces({ input: video });
+
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
                 ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
                 if (predictions.length > 0) {
-                    document.getElementById("emotionText").innerText = "Emotion: Neutral (Demo)";
+                    document.getElementById("emotionText").innerText = "Face Detected";
                 } else {
                     document.getElementById("emotionText").innerText = "No Face Detected";
                 }
